@@ -113,27 +113,30 @@ class LoadMapState extends State<LoadMap> {
                 ],
               ),
 
-              child: Row(
-                children: [
-                  Icon(Icons.search),
-                  RichText(
-                    text: TextSpan(
-                      style: DefaultTextStyle.of(context).style,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Icon(Icons.search),
+                    RichText(
+                      text: TextSpan(
+                        style: DefaultTextStyle.of(context).style,
 
-                      children: [
-                        const TextSpan(
-                          text: 'Địa điểm: ',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        children: [
+                          const TextSpan(
+                            text: 'Địa điểm: ',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
 
-                        TextSpan(text: placeName),
-                      ],
+                          TextSpan(text: placeName),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
