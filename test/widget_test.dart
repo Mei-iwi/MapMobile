@@ -8,7 +8,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:map/main.dart';
 import 'package:map/map/map_screen.dart';
 
 void main() {

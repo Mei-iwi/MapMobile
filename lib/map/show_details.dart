@@ -11,15 +11,15 @@ Future<String> getPlaceName(LatLng point) async {
       "&zoom=18"
       "&addressdetails=1";
 
-  final respone = await http.get(
+  final response = await http.get(
     Uri.parse(url),
     headers: {'User-Agent': 'com.example.map'},
   );
 
-  if (respone.statusCode == 200) {
-    final data = json.decode(respone.body);
-
-    return data['display_name'];
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    return data['display_name'] ?? 'Không rõ địa điểm';
   }
+
   return 'Không thể tìm thấy địa danh';
 }

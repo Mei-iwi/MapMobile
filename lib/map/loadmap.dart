@@ -1,84 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location/location.dart';
-import 'package:map/map/GPS.dart';
-import 'package:map/map/maker.dart';
-import 'package:map/map/show_details.dart';
+
+import 'GPS.dart';
+import 'route_service.dart';
+import 'show_details.dart';
 
 class LoadMap extends StatefulWidget {
   const LoadMap({super.key});
 
   @override
-  State<StatefulWidget> createState() {
-    return LoadMapState();
-  }
+  State<LoadMap> createState() => LoadMapState();
 }
 
 class LoadMapState extends State<LoadMap> {
-  bool isMapLoaded = false;
-
   final MapController mapController = MapController();
 
+  final TextEditingController startLatController = TextEditingController();
+  final TextEditingController startLngController = TextEditingController();
+  final TextEditingController endLatController = TextEditingController();
+  final TextEditingController endLngController = TextEditingController();
+
   LatLng? currentPosition;
+  LatLng? startPoint;
+  LatLng? endPoint;
 
-  List<Marker> makers = [];
+  List<Marker> markers = [];
+  List<LatLng> routePoints = [];
 
-  late Future<LatLng> futurePositon;
+  String startPlaceName = '';
+  String endPlaceName = '';
+  String routeInfo = '';
+  String? errorMessage;
+  bool isLoadingRoute = false;
 
-  String placeName = '';
+  TextEditingController get startLatCtrl => startLatController;
+  TextEditingController get startLngCtrl => startLngController;
+  TextEditingController get endLatCtrl => endLatController;
+  TextEditingController get endLngCtrl => endLngController;
 
-  LatLng? selectedPosition;
-
-  Future<void> loadInitialPosition() async {
-    LatLng pos = await getCurrentPosition();
-
-    setState(() {
-      currentPosition = pos;
-    });
-  }
-
-  Future<void> moveToCurrentLocation() async {
-    Location location = Location();
-
-    var pos = await location.getLocation();
-
-    LatLng newPosition = LatLng(pos.latitude!, pos.longitude!);
-
-    setState(() {
-      makers.clear();
-
-      makers.add(
-        Marker(
-          point: newPosition,
-          width: 80,
-          height: 80,
-          child: const Icon(Icons.location_on, color: Colors.red, size: 40),
-        ),
-      );
-    });
-
-    mapController.move(newPosition, 16);
-  }
-
-  void onMapTap(LatLng point) async {
-    String name = await getPlaceName(point);
-
-    setState(() {
-      placeName = name;
-
-      makers.clear();
-
-      makers.add(
-        Marker(
-          point: point,
-          width: 80,
-          height: 80,
-          child: const Icon(Icons.location_on, color: Colors.red, size: 40),
-        ),
-      );
-    });
-  }
+  String get startName => startPlaceName;
+  String get endName => endPlaceName;
+  String get routeText => routeInfo;
+  bool get loadingRoute => isLoadingRoute;
 
   @override
   void initState() {
@@ -87,59 +51,254 @@ class LoadMapState extends State<LoadMap> {
   }
 
   @override
+  void dispose() {
+    startLatController.dispose();
+    startLngController.dispose();
+    endLatController.dispose();
+    endLngController.dispose();
+    super.dispose();
+  }
+
+  Future<void> loadInitialPosition() async {
+    try {
+      final pos = await getCurrentPosition();
+      if (!mounted) return;
+
+      setState(() {
+        currentPosition = pos;
+        startPoint = pos;
+
+        startLatController.text = pos.latitude.toStringAsFixed(6);
+        startLngController.text = pos.longitude.toStringAsFixed(6);
+
+        markers = [
+          Marker(
+            point: pos,
+            width: 80,
+            height: 80,
+            child: const Icon(Icons.location_on, color: Colors.red, size: 35),
+          ),
+        ];
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        errorMessage = 'Không lấy được vị trí hiện tại';
+      });
+    }
+  }
+
+  Future<void> moveToCurrentLocation() async {
+    try {
+      final pos = await getCurrentPosition();
+      final name = await getPlaceName(pos);
+
+      if (!mounted) return;
+
+      setState(() {
+        currentPosition = pos;
+        startPoint = pos;
+
+        startLatController.text = pos.latitude.toStringAsFixed(6);
+        startLngController.text = pos.longitude.toStringAsFixed(6);
+
+        startPlaceName = name; // cập nhật tên địa điểm điểm đi
+
+        routePoints = [];
+        routeInfo = '';
+
+        markers = [
+          Marker(
+            point: pos,
+            width: 80,
+            height: 80,
+            child: const Icon(Icons.location_on, color: Colors.red, size: 35),
+          ),
+          if (endPoint != null)
+            Marker(
+              point: endPoint!,
+              width: 80,
+              height: 80,
+              child: const Icon(
+                Icons.my_location,
+                color: Colors.blue,
+                size: 40,
+              ),
+            ),
+        ];
+      });
+
+      mapController.move(pos, 16);
+    } catch (e) {
+      debugPrint('Lỗi moveToCurrentLocation: $e');
+    }
+  }
+
+  LatLng? parseLatLng(String latText, String lngText) {
+    final lat = double.tryParse(latText.trim());
+    final lng = double.tryParse(lngText.trim());
+
+    if (lat == null || lng == null) return null;
+    if (lat < -90 || lat > 90) return null;
+    if (lng < -180 || lng > 180) return null;
+
+    return LatLng(lat, lng);
+  }
+
+  void updateMarkers() {
+    final List<Marker> newMarkers = [];
+
+    if (startPoint != null) {
+      newMarkers.add(
+        Marker(
+          point: startPoint!,
+          width: 80,
+          height: 80,
+          child: const Icon(Icons.my_location, color: Colors.blue, size: 35),
+        ),
+      );
+    }
+
+    if (endPoint != null) {
+      newMarkers.add(
+        Marker(
+          point: endPoint!,
+          width: 80,
+          height: 80,
+          child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+        ),
+      );
+    }
+
+    markers = newMarkers;
+  }
+
+  Future<void> drawRoute() async {
+    final start = parseLatLng(startLatController.text, startLngController.text);
+    final end = parseLatLng(endLatController.text, endLngController.text);
+
+    if (start == null || end == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng nhập đúng lat/lng cho 2 vị trí'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoadingRoute = true;
+      startPoint = start;
+      endPoint = end;
+      routePoints = [];
+      routeInfo = '';
+      startPlaceName = '';
+      endPlaceName = '';
+      updateMarkers();
+    });
+
+    try {
+      final route = await getRoute(start, end);
+      final startNameResult = await getPlaceName(start);
+      final endNameResult = await getPlaceName(end);
+
+      if (!mounted) return;
+
+      setState(() {
+        startPlaceName = startNameResult;
+        endPlaceName = endNameResult;
+
+        if (route != null && route.points.isNotEmpty) {
+          routePoints = route.points;
+
+          final km = (route.distance / 1000).toStringAsFixed(2);
+          final minutes = (route.duration / 60).toStringAsFixed(0);
+          routeInfo = 'Quãng đường: $km km | Thời gian: $minutes phút';
+        } else {
+          routePoints = [];
+          routeInfo = 'Không tìm được đường đi';
+        }
+
+        updateMarkers();
+      });
+
+      final center = LatLng(
+        (start.latitude + end.latitude) / 2,
+        (start.longitude + end.longitude) / 2,
+      );
+      mapController.move(center, 13);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        routeInfo = 'Lỗi khi tìm đường';
+        routePoints = [];
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        isLoadingRoute = false;
+      });
+    }
+  }
+
+  void clearRoute() {
+    setState(() {
+      endPoint = null;
+      routePoints = [];
+      routeInfo = '';
+      endPlaceName = '';
+      endLatController.clear();
+      endLngController.clear();
+      updateMarkers();
+    });
+  }
+
+  Future<void> onMapTap(LatLng point) async {
+    if (startPoint == null) return;
+
+    setState(() {
+      endPoint = point;
+      endLatController.text = point.latitude.toStringAsFixed(6);
+      endLngController.text = point.longitude.toStringAsFixed(6);
+      updateMarkers();
+    });
+
+    await drawRoute();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (errorMessage != null) {
+      return Center(
+        child: Text(errorMessage!, style: const TextStyle(fontSize: 16)),
+      );
+    }
+
     if (currentPosition == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Stack(
+    return FlutterMap(
+      mapController: mapController,
+      options: MapOptions(
+        initialCenter: currentPosition!,
+        initialZoom: 16,
+        onTap: (tapPosition, point) => onMapTap(point),
+      ),
       children: [
-        maker(currentPosition!, makers, onMapTap),
-
-        if (placeName.isNotEmpty)
-          Positioned(
-            top: 20,
-            left: 20,
-            right: 20,
-
-            child: Container(
-              padding: const EdgeInsets.all(10),
-
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: const [
-                  BoxShadow(blurRadius: 5, color: Colors.black26),
-                ],
-              ),
-
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    Icon(Icons.search),
-                    RichText(
-                      text: TextSpan(
-                        style: DefaultTextStyle.of(context).style,
-
-                        children: [
-                          const TextSpan(
-                            text: 'Địa điểm: ',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          TextSpan(text: placeName),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.map',
+          maxZoom: 19,
+        ),
+        if (routePoints.isNotEmpty)
+          PolylineLayer(
+            polylines: [
+              Polyline(points: routePoints, strokeWidth: 5, color: Colors.blue),
+            ],
           ),
+        MarkerLayer(markers: markers),
       ],
     );
   }
