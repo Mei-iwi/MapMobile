@@ -1,16 +1,16 @@
-# map
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+lib/
+├─ map/
+│  ├─ map_screen.dart
+│  ├─ actions/
+│  │  ├─ map_route_actions.dart
+│  │  ├─ map_location_actions.dart
+│  │  └─ map_history_actions.dart
+│  ├─ dialogs/
+│  │  ├─ history_location_dialog.dart
+│  │  ├─ current_location_bottom_sheet.dart
+│  │  └─ setting_dialog.dart
+│  └─ widgets/
+│     ├─ map_app_bar.dart
+│     ├─ map_input_box.dart
+│     ├─ route_control_panel.dart
+│     └─ route_info_card.dart

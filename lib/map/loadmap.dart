@@ -102,7 +102,7 @@ class LoadMapState extends State<LoadMap> {
         startLatController.text = pos.latitude.toStringAsFixed(6);
         startLngController.text = pos.longitude.toStringAsFixed(6);
 
-        startPlaceName = name; // cập nhật tên địa điểm điểm đi
+        startPlaceName = name;
 
         routePoints = [];
         routeInfo = '';
@@ -279,26 +279,66 @@ class LoadMapState extends State<LoadMap> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return FlutterMap(
-      mapController: mapController,
-      options: MapOptions(
-        initialCenter: currentPosition!,
-        initialZoom: 16,
-        onTap: (tapPosition, point) => onMapTap(point),
-      ),
+    return Stack(
       children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.example.map',
-          maxZoom: 19,
+        FlutterMap(
+          mapController: mapController,
+          options: MapOptions(
+            initialCenter: currentPosition!,
+            initialZoom: 16,
+            onTap: (tapPosition, point) => onMapTap(point),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.map',
+              maxZoom: 19,
+            ),
+            if (routePoints.isNotEmpty)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: routePoints,
+                    strokeWidth: 5,
+                    color: Colors.blue,
+                  ),
+                ],
+              ),
+            MarkerLayer(markers: markers),
+          ],
         ),
-        if (routePoints.isNotEmpty)
-          PolylineLayer(
-            polylines: [
-              Polyline(points: routePoints, strokeWidth: 5, color: Colors.blue),
+
+        Positioned(
+          right: 16,
+          top: 50,
+          child: Column(
+            children: [
+              FloatingActionButton(
+                backgroundColor: Colors.white,
+                mini: true,
+                heroTag: 'zoom_in',
+                onPressed: () {
+                  final center = mapController.camera.center;
+                  final zoom = mapController.camera.zoom;
+                  mapController.move(center, zoom + 1);
+                },
+                child: const Icon(Icons.add),
+              ),
+              const SizedBox(height: 8),
+              FloatingActionButton(
+                backgroundColor: Colors.white,
+                mini: true,
+                heroTag: 'zoom_out',
+                onPressed: () {
+                  final center = mapController.camera.center;
+                  final zoom = mapController.camera.zoom;
+                  mapController.move(center, zoom - 1);
+                },
+                child: const Icon(Icons.remove),
+              ),
             ],
           ),
-        MarkerLayer(markers: markers),
+        ),
       ],
     );
   }
