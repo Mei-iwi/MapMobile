@@ -76,7 +76,10 @@ class LoadMapState extends State<LoadMap> {
             point: pos,
             width: 80,
             height: 80,
-            child: const Icon(Icons.location_on, color: Colors.red, size: 35),
+            child: GestureDetector(
+              onTap: () => _showMarkerInfo('Vị trí hiện tại', 'Đang tải...', pos),
+              child: const Icon(Icons.location_on, color: Colors.red, size: 35),
+            ),
           ),
         ];
       });
@@ -112,17 +115,19 @@ class LoadMapState extends State<LoadMap> {
             point: pos,
             width: 80,
             height: 80,
-            child: const Icon(Icons.location_on, color: Colors.red, size: 35),
+            child: GestureDetector(
+              onTap: () => _showMarkerInfo('Điểm bắt đầu', startPlaceName, pos),
+              child: const Icon(Icons.location_on, color: Colors.red, size: 35),
+            ),
           ),
           if (endPoint != null)
             Marker(
               point: endPoint!,
               width: 80,
               height: 80,
-              child: const Icon(
-                Icons.my_location,
-                color: Colors.blue,
-                size: 40,
+              child: GestureDetector(
+                onTap: () => _showMarkerInfo('Điểm kết thúc', endPlaceName, endPoint!),
+                child: const Icon(Icons.my_location, color: Colors.blue, size: 40),
               ),
             ),
         ];
@@ -154,7 +159,11 @@ class LoadMapState extends State<LoadMap> {
           point: startPoint!,
           width: 80,
           height: 80,
-          child: const Icon(Icons.my_location, color: Colors.blue, size: 35),
+          child: GestureDetector(
+            // GỌI POPUP Ở ĐÂY
+            onTap: () => _showMarkerInfo('Điểm bắt đầu', startPlaceName, startPoint!),
+            child: const Icon(Icons.my_location, color: Colors.blue, size: 35),
+          ),
         ),
       );
     }
@@ -165,7 +174,11 @@ class LoadMapState extends State<LoadMap> {
           point: endPoint!,
           width: 80,
           height: 80,
-          child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+          child: GestureDetector(
+            // GỌI POPUP Ở ĐÂY
+            onTap: () => _showMarkerInfo('Điểm kết thúc', endPlaceName, endPoint!),
+            child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+          ),
         ),
       );
     }
@@ -265,6 +278,42 @@ class LoadMapState extends State<LoadMap> {
     });
 
     await drawRoute();
+  }
+
+  // Hàm hiển thị Popup khi bấm vào Marker
+  void _showMarkerInfo(String title, String address, LatLng point) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: Row(
+            children: [
+              Icon(title == 'Điểm bắt đầu' ? Icons.my_location : Icons.location_on, 
+                   color: title == 'Điểm bắt đầu' ? Colors.blue : Colors.red),
+              const SizedBox(width: 8),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Địa chỉ: ${address.isNotEmpty ? address : 'Đang tải...'}"),
+              const SizedBox(height: 8),
+              Text("Tọa độ: ${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}", 
+                   style: const TextStyle(color: Colors.grey, fontSize: 13)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text("Đóng"),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
