@@ -122,7 +122,43 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
         ),
-        body: LoadMap(key: mapKey),
+        body: Stack(
+          children: [
+            // Lớp bản đồ chính
+            LoadMap(key: mapKey),
+
+            // Thanh tìm kiếm nổi lên trên
+            Positioned(
+              top: 15,
+              left: 15,
+              right: 15,
+              child: Card(
+                elevation: 6,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: TextField(
+                    textInputAction: TextInputAction.search,
+                    decoration: const InputDecoration(
+                      hintText: 'Tìm kiếm địa điểm...',
+                      prefixIcon: Icon(Icons.search, color: Colors.blue),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    onSubmitted: (value) {
+                      if (value.trim().isNotEmpty) {
+                        // Gọi hàm searchLocation thông qua mapKey
+                        mapKey.currentState?.searchLocation(value.trim());
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         floatingActionButton: Padding(
           padding: const EdgeInsets.only(bottom: 70, right: 20),
