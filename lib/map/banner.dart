@@ -62,7 +62,7 @@ class _SplashScreen extends State<SplashScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                "I'VE ALWAYS BELIEVED THAT COWS CAN FLY AWAY",
+                "WE'VE BELIEVED THAT COWS CAN FLY",
                 style: TextStyle(
                   fontSize: 25,
                   fontWeight: FontWeight.bold,

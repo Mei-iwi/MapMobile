@@ -172,6 +172,9 @@ class _MapScreenState extends State<MapScreen> {
             ),
             child: IconButton(
               color: Colors.blue,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              iconSize: 60,
               onPressed: () async {
                 await showCurrentLocationBottomSheet(
                   context: context,
@@ -179,7 +182,15 @@ class _MapScreenState extends State<MapScreen> {
                 );
                 if (mounted) setState(() {});
               },
-              icon: const Icon(Icons.my_location),
+              icon: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(100),
+                  image: DecorationImage(
+                    fit: BoxFit.cover,
+                    image: AssetImage('assets/images/cowsmile.png'),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
